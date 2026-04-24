@@ -1,64 +1,64 @@
 'use client';
 
-import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { demoTickets, messages, appointments } from '@/data/demo';
 
-const fallbackTicket = {
-  id: 'demo-ticket-skirting',
-  title: 'KUS9-159 - 3rd floor left | WE 33 - Loose skirting boards - 530204',
-  description: 'In 2 rooms the skirting boards are loose.',
-  status: 'Open',
-  category: 'Floor',
-  capmoTicketId: 'CAPMO-MOCK-12345'
-};
-
-export default function TenantDashboard() {
-  const [tickets, setTickets] = useState<any[]>([fallbackTicket]);
-  const [tenantName, setTenantName] = useState('Bernd Japp');
-
-  useEffect(() => {
-    const tenantId = localStorage.getItem('tenantId');
-    if (!tenantId) return;
-    fetch('/api/tickets')
-      .then(res => res.ok ? res.json() : [])
-      .then(data => {
-        if (Array.isArray(data) && data.length > 0) setTickets(data);
-      })
-      .catch(() => setTickets([fallbackTicket]));
-  }, []);
-
+export default function Dashboard(){
   return (
-    <div className="space-y-8">
-      <section className="card p-6 bg-gradient-to-br from-white to-emerald-50">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <div className="text-sm font-semibold text-emerald-700">Tenant Portal</div>
-            <h1 className="text-3xl font-bold mt-1">Welcome, {tenantName}</h1>
-            <p className="text-slate-600 mt-2">Report defects, track Capmo ticket status, and view updates from property management.</p>
-          </div>
-          <Link href="/tenant/tickets/new" className="btn-primary text-center">Create new defect report</Link>
+    <div className="app-shell">
+      <div className="topbar">
+        <div className="brand"><div className="logo-mark">IX <span>mm</span></div> innoclix mm</div>
+        <div className="nav">
+          <a className="active">Overview</a>
+          <a>My Requests</a>
+          <a>Messages</a>
+          <a>Appointments</a>
         </div>
-      </section>
+        <div className="user-pill"><div className="avatar">OY</div> Onur Yilmaz</div>
+      </div>
 
-      <section className="grid md:grid-cols-3 gap-4">
-        <div className="card p-5"><div className="text-sm text-slate-500">Open Tickets</div><div className="text-3xl font-bold text-emerald-700">{tickets.length}</div></div>
-        <div className="card p-5"><div className="text-sm text-slate-500">Capmo Mode</div><div className="text-2xl font-bold text-blue-700">Mock</div></div>
-        <div className="card p-5"><div className="text-sm text-slate-500">Property</div><div className="text-2xl font-bold">KUS9-159</div></div>
-      </section>
+      <div className="page space-y-6">
 
-      <section className="space-y-4">
-        <h2 className="text-xl font-semibold">Existing Reports</h2>
-        {tickets.map(ticket => (
-          <div key={ticket.id} className="card p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-              <div className="font-semibold">{ticket.title}</div>
-              <div className="text-sm text-slate-500 mt-1">{ticket.description}</div>
-              <div className="text-xs text-slate-400 mt-2">Capmo ID: {ticket.capmoTicketId ?? 'Pending'}</div>
-            </div>
-            <span className="badge bg-emerald-100 text-emerald-700">{ticket.status}</span>
+        <div className="card p-6 flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-bold">Hello Mr. Yilmaz,</h1>
+            <p className="muted">Here is your current overview.</p>
           </div>
-        ))}
-      </section>
+          <button className="btn-primary">+ New Request</button>
+        </div>
+
+        <div className="grid-4">
+          {demoTickets.map(t=> (
+            <div key={t.id} className="ticket-card">
+              <div className="flex justify-between">
+                <span className={t.status==='Open'?'badge badge-open':t.status==='In Progress'?'badge badge-progress':'badge badge-done'}>{t.status}</span>
+              </div>
+              <div className="mt-2 font-semibold">{t.title}</div>
+              <div className="text-xs text-gray-400">ID: {t.id}</div>
+              <div className="mt-2 text-sm text-blue-600">Details →</div>
+            </div>
+          ))}
+        </div>
+
+        <div className="grid-2">
+          <div className="panel">
+            <h3 className="font-semibold mb-3">Appointment proposals</h3>
+            {appointments.map(a=> (
+              <div key={a} className="mb-2">
+                <input type="radio"/> {a}
+              </div>
+            ))}
+            <button className="btn-primary mt-3 w-full">Confirm Appointment</button>
+          </div>
+
+          <div className="panel">
+            <h3 className="font-semibold mb-3">Latest messages</h3>
+            {messages.map(m=> (
+              <div key={m} className="text-sm border-b py-2">{m}</div>
+            ))}
+          </div>
+        </div>
+
+      </div>
     </div>
   );
 }
