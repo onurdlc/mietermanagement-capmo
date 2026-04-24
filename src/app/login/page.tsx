@@ -1,39 +1,7 @@
 'use client';
-
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-export default function LoginPage() {
-  const [tenantNumber, setTenantNumber] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [error, setError] = useState('');
-  const router = useRouter();
+const t={de:{tenant:'Mieter Login',manager:'Verwalter / Eigentümer Login',admin:'Admin / Gewährleistungsmanager Login',hint:'Bitte melden Sie sich in Ihrem Konto an.',tenantNo:'Mieter-Nr.',last:'Nachname',email:'E-Mail-Adresse',pass:'Passwort',code:'Authentifizierungscode (2FA)',login:'Einloggen',back:'Zurück zur Auswahl',err:'Ungültige Zugangsdaten'},en:{tenant:'Tenant Login',manager:'Property Manager / Owner Login',admin:'Admin / Warranty Manager Login',hint:'Please sign in to your account.',tenantNo:'Tenant no.',last:'Last name',email:'Email address',pass:'Password',code:'Authentication code (2FA)',login:'Login',back:'Back to selection',err:'Invalid credentials'}} as const;
 
-  const handleLogin = async () => {
-    setError('');
-    const res = await fetch('/api/auth/tenant-login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tenantNumber, lastName })
-    });
-
-    if (!res.ok) {
-      setError('Invalid credentials');
-      return;
-    }
-
-    const data = await res.json();
-    localStorage.setItem('tenantId', data.id);
-    router.push('/tenant/dashboard');
-  };
-
-  return (
-    <div className="max-w-md mx-auto mt-16 card p-6 space-y-4">
-      <h1 className="text-xl font-semibold">Tenant Login</h1>
-      <input className="input" placeholder="Tenant Number" value={tenantNumber} onChange={(e) => setTenantNumber(e.target.value)} />
-      <input className="input" placeholder="Last Name" value={lastName} onChange={(e) => setLastName(e.target.value)} />
-      {error && <div className="text-red-500 text-sm">{error}</div>}
-      <button className="btn-primary w-full" onClick={handleLogin}>Login</button>
-    </div>
-  );
-}
+export default function LoginPage(){const[lang,setLang]=useState<'de'|'en'>('de');const[role,setRole]=useState<'tenant'|'manager'|'admin'|null>(null);const[tenantNumber,setTenantNumber]=useState('530204');const[lastName,setLastName]=useState('Japp');const[error,setError]=useState('');const router=useRouter();const L=t[lang];async function login(){setError('');if(role==='tenant'){const r=await fetch('/api/auth/tenant-login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tenantNumber,lastName})});if(!r.ok){setError(L.err);return}const d=await r.json();localStorage.setItem('tenantId',d.id);router.push('/tenant/dashboard');return}router.push(role==='admin'?'/admin/dashboard':'/manager/dashboard')} const roles=[['tenant',L.tenant,'♡'],['manager',L.manager,'▣'],['admin',L.admin,'◇']] as const;return <div className="app-shell"><div className="topbar"><div className="brand"><div className="logo-mark">IX <span>mm</span></div><div><b>innoclix mm</b><div className="text-[10px] tracking-[.25em] text-gray-400">WHERE INNOVATION CLICKS</div></div></div><button className="btn-ghost" onClick={()=>setLang(lang==='de'?'en':'de')}>{lang==='de'?'DE':'EN'} ▾</button></div><div className="login-wrap"><div className="w-full max-w-6xl"><h2 className="text-sm font-black tracking-wide mb-6">LOGIN SCREENS</h2><div className="grid-3">{roles.map(r=><div key={r[0]} className="login-card text-center"><div className="brand justify-center mb-5"><div className="logo-mark">IX <span>mm</span></div></div><div className="login-icon">{r[2]}</div><h2 className="font-bold">{r[1]}</h2><p className="muted text-xs mt-2">{L.hint}</p><div className="space-y-3 mt-6">{r[0]==='tenant'?<><input className="input" placeholder={L.tenantNo} value={tenantNumber} onChange={e=>setTenantNumber(e.target.value)}/><input className="input" placeholder={L.last} value={lastName} onChange={e=>setLastName(e.target.value)}/></>:<><input className="input" placeholder={L.email}/><input className="input" placeholder={L.pass} type="password"/>{r[0]==='admin'&&<input className="input" placeholder={L.code}/>}</>} {error&&role===r[0]&&<p className="text-red-500 text-sm">{error}</p>}<button className="btn-primary w-full" onClick={()=>{setRole(r[0]); setTimeout(login,0)}}>{r[0]==='tenant'?(lang==='de'?'Anliegen melden / Einloggen':'Report request / Login'):L.login}</button></div><button className="mt-8 text-sm text-teal-600">← {L.back}</button></div>)}</div></div></div></div>}
