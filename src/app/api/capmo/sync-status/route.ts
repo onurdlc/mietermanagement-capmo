@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getCapmoTicketStatus } from '@/lib/capmo';
 
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 export async function GET() {
   const tickets = await prisma.ticket.findMany({ where: { capmoTicketId: { not: null } } });
   const results = [];
