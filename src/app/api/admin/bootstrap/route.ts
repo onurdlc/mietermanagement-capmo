@@ -4,18 +4,36 @@ import { prisma } from '@/lib/db';
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
+function createSlug(name: string) {
+  return name.toLowerCase().replace(/\s+/g, '-');
+}
+
 export async function POST(): Promise<Response> {
   try {
+    const orgName = 'Demo Real Estate GmbH';
+
     const org = await prisma.organization.upsert({
       where: { id: 'demo-org' },
-      update: {},
-      create: { id: 'demo-org', name: 'Demo Real Estate GmbH' }
+      update: {
+        name: orgName,
+        slug: createSlug(orgName)
+      },
+      create: {
+        id: 'demo-org',
+        name: orgName,
+        slug: createSlug(orgName)
+      }
     });
 
     const property = await prisma.property.upsert({
       where: { id: 'demo-property-kus9-159' },
       update: {},
-      create: { id: 'demo-property-kus9-159', organizationId: org.id, name: 'KUS9-159', address: 'Demo Street 9, Frankfurt am Main' }
+      create: {
+        id: 'demo-property-kus9-159',
+        organizationId: org.id,
+        name: 'KUS9-159',
+        address: 'Demo Street 9, Frankfurt am Main'
+      }
     });
 
     const tenant = await prisma.tenant.upsert({
@@ -58,8 +76,18 @@ export async function POST(): Promise<Response> {
       }
     });
 
-    return NextResponse.json({ success: true, tenantLogin: { tenantNumber: tenant.tenantNumber, lastName: tenant.lastName }, ticketId: ticket.id });
+    return NextResponse.json({
+      success: true,
+      tenantLogin: {
+        tenantNumber: tenant.tenantNumber,
+        lastName: tenant.lastName
+      },
+      ticketId: ticket.id
+    });
   } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: error.message },
+      { status: 500 }
+    );
   }
 }
