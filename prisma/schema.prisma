@@ -21,6 +21,8 @@ model User {
   organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
   comments       Comment[]
   auditLogs      AuditLog[]
+  aiFeedback     AiFeedback[]
+  ruleSuggestionsReviewed AiRuleSuggestion[] @relation("AiRuleSuggestionReviewer")
 
   @@index([organizationId])
   @@index([role])
@@ -54,6 +56,10 @@ model Organization {
   workflowRules   WorkflowRule[]
   aiRules         AiRule[]
   settings        OrganizationSetting[]
+  aiFeedback      AiFeedback[]
+  trainingExamples AiTrainingExample[]
+  ruleSuggestions AiRuleSuggestion[]
+  aiMetrics       AiQualityMetric[]
 
   @@index([slug])
   @@index([isActive])
@@ -215,6 +221,8 @@ model Ticket {
   syncLogs           CapmoSyncLog[]
   conversations      AiConversation[]
   imageAnalyses      ImageAnalysis[]
+  aiFeedback         AiFeedback[]
+  trainingExamples   AiTrainingExample[]
 
   @@index([organizationId])
   @@index([propertyId])
@@ -300,6 +308,8 @@ model AiConversation {
   tenant         Tenant?         @relation(fields: [tenantId], references: [id], onDelete: SetNull)
   ticket         Ticket?         @relation(fields: [ticketId], references: [id], onDelete: SetNull)
   imageAnalyses  ImageAnalysis[]
+  feedback       AiFeedback[]
+  trainingExamples AiTrainingExample[]
 
   @@index([organizationId])
   @@index([tenantId])
@@ -332,6 +342,8 @@ model ImageAnalysis {
   conversation       AiConversation? @relation(fields: [conversationId], references: [id], onDelete: SetNull)
   ticket             Ticket?         @relation(fields: [ticketId], references: [id], onDelete: SetNull)
   attachment         Attachment?     @relation(fields: [attachmentId], references: [id], onDelete: SetNull)
+  feedback           AiFeedback[]
+  trainingExamples   AiTrainingExample[]
 
   @@index([organizationId])
   @@index([conversationId])
@@ -340,6 +352,89 @@ model ImageAnalysis {
   @@index([detectedDamage])
   @@index([detectedTrade])
   @@index([severity])
+}
+
+model AiFeedback {
+  id              String          @id @default(cuid())
+  organizationId  String
+  userId          String?
+  ticketId        String?
+  conversationId  String?
+  imageAnalysisId String?
+  feedbackType    String
+  rating          Int?
+  originalOutput  Json?
+  correctedOutput Json?
+  note            String?
+  createdAt       DateTime        @default(now())
+  organization    Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user            User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
+  ticket          Ticket?         @relation(fields: [ticketId], references: [id], onDelete: SetNull)
+  conversation    AiConversation? @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+  imageAnalysis   ImageAnalysis?  @relation(fields: [imageAnalysisId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId])
+  @@index([feedbackType])
+  @@index([ticketId])
+  @@index([conversationId])
+  @@index([imageAnalysisId])
+}
+
+model AiTrainingExample {
+  id              String          @id @default(cuid())
+  organizationId  String
+  ticketId        String?
+  conversationId  String?
+  imageAnalysisId String?
+  input           Json
+  expectedOutput  Json
+  source          String          @default("HUMAN_FEEDBACK")
+  qualityScore    Float           @default(1.0)
+  isApproved      Boolean         @default(false)
+  createdAt       DateTime        @default(now())
+  organization    Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  ticket          Ticket?         @relation(fields: [ticketId], references: [id], onDelete: SetNull)
+  conversation    AiConversation? @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+  imageAnalysis   ImageAnalysis?  @relation(fields: [imageAnalysisId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId])
+  @@index([source])
+  @@index([isApproved])
+}
+
+model AiRuleSuggestion {
+  id             String        @id @default(cuid())
+  organizationId String
+  sourceType     String
+  sourceIds      Json
+  suggestedRule  Json
+  confidence     Float         @default(0.5)
+  status         String        @default("PENDING")
+  reviewedById   String?
+  reviewedAt     DateTime?
+  createdAt      DateTime      @default(now())
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  reviewedBy     User?         @relation("AiRuleSuggestionReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  @@index([organizationId])
+  @@index([status])
+  @@index([sourceType])
+}
+
+model AiQualityMetric {
+  id             String       @id @default(cuid())
+  organizationId String
+  metricKey      String
+  metricValue    Float
+  sampleSize     Int          @default(0)
+  periodStart    DateTime
+  periodEnd      DateTime
+  createdAt      DateTime     @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([metricKey])
+  @@index([periodStart, periodEnd])
 }
 
 model AuditLog {
