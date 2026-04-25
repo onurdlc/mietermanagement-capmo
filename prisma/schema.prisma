@@ -8,29 +8,37 @@ datasource db {
 }
 
 model User {
-  id             String   @id @default(cuid())
-  email          String   @unique
+  id             String        @id @default(cuid())
+  email          String        @unique
   name           String?
   role           String
   organizationId String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  comments       Comment[]
 }
 
 model Organization {
-  id        String   @id @default(cuid())
-  name      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         String     @id @default(cuid())
+  name       String
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  properties Property[]
+  tickets    Ticket[]
 }
 
 model Property {
-  id             String   @id @default(cuid())
+  id             String       @id @default(cuid())
   organizationId String
   name           String
   address        String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  tenants        Tenant[]
+  tickets        Ticket[]
+
+  @@index([organizationId])
 }
 
 model Tenant {
@@ -46,10 +54,15 @@ model Tenant {
   floor        String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+  property     Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  tickets      Ticket[]
+
+  @@index([tenantNumber, lastName])
+  @@index([propertyId])
 }
 
 model Ticket {
-  id                 String   @id @default(cuid())
+  id                 String          @id @default(cuid())
   organizationId     String
   propertyId         String
   tenantId           String
@@ -59,14 +72,27 @@ model Ticket {
   category           String?
   type               String?
   location           String?
-  status             String
+  status             String          @default("Open")
   dueDate            DateTime?
   company            String?
   responsiblePersons String?
-  capmoSyncStatus    String?
+  capmoSyncStatus    String?         @default("PENDING")
   capmoLastSyncedAt  DateTime?
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+  organization       Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  property           Property        @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  tenant             Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  attachments        Attachment[]
+  comments           Comment[]
+  statusHistory      StatusHistory[]
+  syncLogs           CapmoSyncLog[]
+
+  @@index([organizationId])
+  @@index([propertyId])
+  @@index([tenantId])
+  @@index([capmoTicketId])
+  @@index([status])
 }
 
 model Attachment {
@@ -78,6 +104,9 @@ model Attachment {
   fileSize          Int
   capmoAttachmentId String?
   createdAt         DateTime @default(now())
+  ticket            Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@index([ticketId])
 }
 
 model Comment {
@@ -87,6 +116,11 @@ model Comment {
   body      String
   source    String
   createdAt DateTime @default(now())
+  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  author    User?    @relation(fields: [authorId], references: [id], onDelete: SetNull)
+
+  @@index([ticketId])
+  @@index([authorId])
 }
 
 model StatusHistory {
@@ -96,6 +130,9 @@ model StatusHistory {
   newStatus String
   source    String
   createdAt DateTime @default(now())
+  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@index([ticketId])
 }
 
 model CapmoSyncLog {
@@ -107,4 +144,9 @@ model CapmoSyncLog {
   responsePayload String?
   errorMessage    String?
   createdAt       DateTime @default(now())
+  ticket          Ticket?  @relation(fields: [ticketId], references: [id], onDelete: SetNull)
+
+  @@index([ticketId])
+  @@index([status])
+  @@index([direction])
 }
