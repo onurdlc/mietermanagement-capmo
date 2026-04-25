@@ -10,21 +10,44 @@ datasource db {
 model User {
   id             String        @id @default(cuid())
   email          String        @unique
+  passwordHash   String?
   name           String?
   role           String
   organizationId String?
+  isActive       Boolean       @default(true)
+  lastLoginAt    DateTime?
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
   comments       Comment[]
+
+  @@index([organizationId])
+  @@index([role])
 }
 
 model Organization {
-  id         String     @id @default(cuid())
-  name       String
-  createdAt  DateTime   @default(now())
-  updatedAt  DateTime   @updatedAt
-  properties Property[]
-  tickets    Ticket[]
+  id              String     @id @default(cuid())
+  name            String
+  slug            String     @unique
+  plan            String     @default("STARTER")
+  seats           Int        @default(5)
+  isActive        Boolean    @default(true)
+  primaryColor    String     @default("#08b7ca")
+  secondaryColor  String     @default("#00d994")
+  logoUrl         String?
+  customDomain    String?
+  billingEmail    String?
+  capmoApiBaseUrl String?
+  capmoProjectId  String?
+  capmoApiKeyRef  String?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  users           User[]
+  properties      Property[]
+  tickets         Ticket[]
+
+  @@index([slug])
+  @@index([isActive])
 }
 
 model Property {
@@ -52,6 +75,7 @@ model Tenant {
   mobile       String?
   unit         String?
   floor        String?
+  isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   property     Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
@@ -59,6 +83,7 @@ model Tenant {
 
   @@index([tenantNumber, lastName])
   @@index([propertyId])
+  @@unique([propertyId, tenantNumber])
 }
 
 model Ticket {
@@ -73,6 +98,7 @@ model Ticket {
   type               String?
   location           String?
   status             String          @default("Open")
+  priority           String          @default("NORMAL")
   dueDate            DateTime?
   company            String?
   responsiblePersons String?
