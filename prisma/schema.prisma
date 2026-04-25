@@ -20,6 +20,7 @@ model User {
   updatedAt      DateTime      @updatedAt
   organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
   comments       Comment[]
+  auditLogs      AuditLog[]
 
   @@index([organizationId])
   @@index([role])
@@ -45,6 +46,8 @@ model Organization {
   users           User[]
   properties      Property[]
   tickets         Ticket[]
+  auditLogs       AuditLog[]
+  conversations   AiConversation[]
 
   @@index([slug])
   @@index([isActive])
@@ -65,21 +68,22 @@ model Property {
 }
 
 model Tenant {
-  id           String   @id @default(cuid())
-  propertyId   String
-  tenantNumber String
-  firstName    String
-  lastName     String
-  email        String?
-  phone        String?
-  mobile       String?
-  unit         String?
-  floor        String?
-  isActive     Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  property     Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  tickets      Ticket[]
+  id            String           @id @default(cuid())
+  propertyId    String
+  tenantNumber  String
+  firstName     String
+  lastName      String
+  email         String?
+  phone         String?
+  mobile        String?
+  unit          String?
+  floor         String?
+  isActive      Boolean          @default(true)
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  property      Property         @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  tickets       Ticket[]
+  conversations AiConversation[]
 
   @@index([tenantNumber, lastName])
   @@index([propertyId])
@@ -99,6 +103,7 @@ model Ticket {
   location           String?
   status             String          @default("Open")
   priority           String          @default("NORMAL")
+  slaDueAt           DateTime?
   dueDate            DateTime?
   company            String?
   responsiblePersons String?
@@ -113,12 +118,14 @@ model Ticket {
   comments           Comment[]
   statusHistory      StatusHistory[]
   syncLogs           CapmoSyncLog[]
+  conversations      AiConversation[]
 
   @@index([organizationId])
   @@index([propertyId])
   @@index([tenantId])
   @@index([capmoTicketId])
   @@index([status])
+  @@index([priority])
 }
 
 model Attachment {
@@ -175,4 +182,48 @@ model CapmoSyncLog {
   @@index([ticketId])
   @@index([status])
   @@index([direction])
+}
+
+model AiConversation {
+  id             String       @id @default(cuid())
+  organizationId String
+  tenantId       String?
+  ticketId       String?
+  channel        String       @default("CHAT")
+  language       String       @default("de")
+  status         String       @default("COLLECTING")
+  messages       Json
+  extractedData  Json?
+  missingFields  Json?
+  transcriptText String?
+  voiceFileUrl   String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  tenant         Tenant?      @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+  ticket         Ticket?      @relation(fields: [ticketId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId])
+  @@index([tenantId])
+  @@index([ticketId])
+  @@index([status])
+}
+
+model AuditLog {
+  id             String        @id @default(cuid())
+  organizationId String?
+  userId         String?
+  action         String
+  entityType     String
+  entityId       String?
+  metadata       Json?
+  ipAddress      String?
+  createdAt      DateTime      @default(now())
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  user           User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId])
+  @@index([userId])
+  @@index([entityType])
+  @@index([action])
 }
