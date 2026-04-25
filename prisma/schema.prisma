@@ -49,8 +49,102 @@ model Organization {
   auditLogs       AuditLog[]
   conversations   AiConversation[]
   imageAnalyses   ImageAnalysis[]
+  categories      TicketCategory[]
+  requiredFields  RequiredField[]
+  workflowRules   WorkflowRule[]
+  aiRules         AiRule[]
+  settings        OrganizationSetting[]
 
   @@index([slug])
+  @@index([isActive])
+}
+
+model OrganizationSetting {
+  id             String       @id @default(cuid())
+  organizationId String
+  key            String
+  value          Json
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, key])
+  @@index([organizationId])
+}
+
+model TicketCategory {
+  id             String       @id @default(cuid())
+  organizationId String
+  name           String
+  key            String
+  description    String?
+  defaultTrade   String?
+  defaultPriority String      @default("NORMAL")
+  isActive       Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  requiredFields RequiredField[]
+
+  @@unique([organizationId, key])
+  @@index([organizationId])
+}
+
+model RequiredField {
+  id             String          @id @default(cuid())
+  organizationId String
+  categoryId     String?
+  key            String
+  label          String
+  fieldType      String          @default("text")
+  isRequired     Boolean         @default(true)
+  aiQuestionDe   String?
+  aiQuestionEn   String?
+  displayOrder   Int             @default(0)
+  validation     Json?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  category       TicketCategory? @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([categoryId])
+}
+
+model WorkflowRule {
+  id             String       @id @default(cuid())
+  organizationId String
+  name           String
+  triggerType    String
+  conditions     Json
+  actions        Json
+  priority       Int          @default(100)
+  isActive       Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([triggerType])
+  @@index([isActive])
+}
+
+model AiRule {
+  id             String       @id @default(cuid())
+  organizationId String
+  name           String
+  ruleType       String
+  inputPattern   Json
+  outputMapping  Json
+  confidenceMin  Float        @default(0.6)
+  priority       Int          @default(100)
+  isActive       Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([ruleType])
   @@index([isActive])
 }
 
@@ -214,30 +308,30 @@ model AiConversation {
 }
 
 model ImageAnalysis {
-  id                String          @id @default(cuid())
-  organizationId    String
-  conversationId    String?
-  ticketId          String?
-  attachmentId      String?
-  imageUrl          String
-  fileName          String?
-  model             String          @default("mock-vision")
-  status            String          @default("COMPLETED")
-  detectedDamage    String?
-  detectedTrade     String?
-  detectedRoom      String?
-  severity          String          @default("NORMAL")
-  warrantyLikelihood String         @default("UNKNOWN")
-  confidence        Float           @default(0.5)
-  summary           String?
-  recommendations   Json?
-  extractedData     Json?
-  followUpQuestions Json?
-  createdAt         DateTime        @default(now())
-  organization      Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  conversation      AiConversation? @relation(fields: [conversationId], references: [id], onDelete: SetNull)
-  ticket            Ticket?         @relation(fields: [ticketId], references: [id], onDelete: SetNull)
-  attachment        Attachment?     @relation(fields: [attachmentId], references: [id], onDelete: SetNull)
+  id                 String          @id @default(cuid())
+  organizationId     String
+  conversationId     String?
+  ticketId           String?
+  attachmentId       String?
+  imageUrl           String
+  fileName           String?
+  model              String          @default("mock-vision")
+  status             String          @default("COMPLETED")
+  detectedDamage     String?
+  detectedTrade      String?
+  detectedRoom       String?
+  severity           String          @default("NORMAL")
+  warrantyLikelihood String          @default("UNKNOWN")
+  confidence         Float           @default(0.5)
+  summary            String?
+  recommendations    Json?
+  extractedData      Json?
+  followUpQuestions  Json?
+  createdAt          DateTime        @default(now())
+  organization       Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  conversation       AiConversation? @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+  ticket             Ticket?         @relation(fields: [ticketId], references: [id], onDelete: SetNull)
+  attachment         Attachment?     @relation(fields: [attachmentId], references: [id], onDelete: SetNull)
 
   @@index([organizationId])
   @@index([conversationId])
